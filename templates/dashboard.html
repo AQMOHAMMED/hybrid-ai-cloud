@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block body %}
+{% if msg %}<div class="alert {{ msg[0] }}">{{ msg[1] }}</div>{% endif %}
+{% if stale %}<div class="alert err">{{ t.stale }} <span class="num" style="direction:ltr;display:inline-block">{{ synced.strftime('%Y-%m-%d %H:%M') + ' UTC' if synced else '—' }}</span></div>{% endif %}
+{% set states = {'running': ('d-ok', t.st_running), 'starting': ('d-warn', t.st_starting), 'closing': ('d-warn', t.st_closing),
+                 'stopped': ('d-bad', t.st_stopped), 'error': ('d-bad', t.st_error)} %}
+
+<div class="card" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">
+  <div>
+    <h2 style="margin:0 0 6px">{{ user.name or user.email }}</h2>
+    {% if client %}<div class="muted num" style="direction:ltr;text-align:start">{{ client.mt5_login }} @ {{ client.mt5_server }}</div>{% endif %}
+    {% if exp %}<div class="muted" style="margin-top:6px">{{ t.sub_end }}:
+      <b class="{{ 'pos' if active else 'neg' }}">{{ exp.strftime('%Y-%m-%d %H:%M') }} UTC</b> · {{ left }}</div>{% endif %}
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    {% if client %}{% set s = states.get(state, ('d-warn', t.st_starting if active else t.st_stopped)) %}
+      <span class="pill" id="state"><span class="dot {{ s[0] }}"></span>{{ t.bot }}: {{ s[1] }}</span>
+      {% if not client.paused %}
+      <form method="post" action="/stop" onsubmit="return confirm('{{ t.stop_q }}')">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="btn" style="border-color:rgba(255,93,108,.5);color:var(--red)" type="submit">{{ t.stop_trading }}</button>
+      </form>
+      {% endif %}
+    {% else %}<span class="pill"><span class="dot d-warn"></span>{{ t.st_none }}</span>{% endif %}
+  </div>
+</div>
+
+{% if client and client.paused %}<div class="alert err">{{ t.stopped_note }}</div>{% endif %}
+
+{% if client %}
+<div class="grid g4" style="margin-top:14px">
+  <div class="card kpi"><div class="l">{{ t.total_trades }}</div><div class="v" id="k-trades">{{ k.trades }}</div></div>
+  <div class="card kpi"><div class="l">{{ t.wins }}</div><div class="v pos" id="k-wins">{{ k.wins }}</div>
+    <div class="l">{{ t.losses }}: <span id="k-losses">{{ k.losses }}</span></div></div>
+  <div class="card kpi"><div class="l">{{ t.winrate }}</div><div class="v" id="k-winrate">{{ k.winrate }}%</div></div>
+  <div class="card kpi"><div class="l">{{ t.profit }}</div><div class="v {{ 'pos' if k.pnl >= 0 else 'neg' }}" id="k-pnl">{{ '%.2f'|format(k.pnl) }}</div></div>
+</div>
+<div class="grid g3" style="margin-top:14px">
+  <div class="card kpi"><div class="l">{{ t.balance }}</div><div class="v" id="k-balance">{{ '%.2f'|format(k.balance or 0) }}</div></div>
+  <div class="card kpi"><div class="l">{{ t.equity }}</div><div class="v" id="k-equity">{{ '%.2f'|format(k.equity or 0) }}</div></div>
+  <div class="card kpi"><div class="l">{{ t.floating }}</div><div class="v {{ 'pos' if (k.floating or 0) >= 0 else 'neg' }}" id="k-floating">{{ '%.2f'|format(k.floating or 0) }}</div></div>
+</div>
+<div class="card" style="margin-top:14px">
+  <h2>{{ t.open_pos }}</h2>
+  <table><thead><tr><th>{{ t.symbol }}</th><th>{{ t.type }}</th><th>{{ t.volume }}</th><th>{{ t.open_price }}</th><th>{{ t.profit }}</th></tr></thead>
+  <tbody id="pos">{% for p in st.positions or [] %}<tr><td>{{ p.symbol }}</td><td>{{ p.type }}</td><td class="num">{{ p.volume }}</td><td class="num">{{ p.price_open }}</td>
+    <td class="num {{ 'pos' if p.profit >= 0 else 'neg' }}">{{ '%.2f'|format(p.profit) }}</td></tr>{% else %}<tr><td colspan="5" class="muted">{{ t.no_pos }}</td></tr>{% endfor %}</tbody></table>
+</div>
+{% else %}
+<div class="alert err">{{ t.no_account_yet }}</div>
+{% endif %}
+
+<div class="risk"><b>{{ t.risk_title }}:</b> {{ t.risk }}</div>
+
+{% if client %}
+<script>
+const f = x => (x == null ? '—' : Number(x).toFixed(2));
+const set = (id, v, cls) => { const e = document.getElementById(id); e.textContent = v; if (cls !== undefined) e.className = 'v ' + cls; };
+async function tick() {
+  try {
+    const r = await fetch('/api/status'); if (!r.ok) return; const d = await r.json();
+    set('k-trades', d.trades || 0); set('k-wins', d.wins || 0, 'pos'); document.getElementById('k-losses').textContent = d.losses || 0;
+    set('k-winrate', (d.winrate || 0) + '%');
+    set('k-pnl', f(d.pnl), (d.pnl || 0) >= 0 ? 'pos' : 'neg');
+    set('k-balance', f(d.balance)); set('k-equity', f(d.equity));
+    set('k-floating', f(d.floating), (d.floating || 0) >= 0 ? 'pos' : 'neg');
+    const tb = document.getElementById('pos'); tb.innerHTML = '';
+    if (!(d.positions || []).length) { tb.innerHTML = '<tr><td colspan="5" class="muted">{{ t.no_pos }}</td></tr>'; return; }
+    for (const p of d.positions) {
+      const tr = document.createElement('tr');
+      for (const [v, c] of [[p.symbol, ''], [p.type, ''], [p.volume, 'num'], [p.price_open, 'num'], [f(p.profit), 'num ' + (p.profit >= 0 ? 'pos' : 'neg')]]) {
+        const td = document.createElement('td'); td.textContent = v; td.className = c; tr.appendChild(td);
+      }
+      tb.appendChild(tr);
+    }
+  } catch (e) {}
+}
+setInterval(tick, 5000);
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="{{ lang }}" dir="{{ t.dir }}">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t.brand }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0A0D14;--card:rgba(18,23,34,.85);--line:#1F2636;--gold:#E8B04B;--green:#2BD98B;--red:#FF5D6C;--muted:#8A93A6;--text:#E9ECF3}
+*{box-sizing:border-box}
+body{margin:0;color:var(--text);font-family:{% if lang=='ar' %}'Tajawal'{% else %}'Inter'{% endif %},'Segoe UI',sans-serif;
+ background:radial-gradient(1100px 600px at 100% -10%,rgba(232,176,75,.12),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(43,217,139,.07),transparent 60%),var(--bg);min-height:100vh}
+a{color:var(--gold);text-decoration:none}
+.wrap{max-width:1150px;margin:0 auto;padding:0 20px}
+nav{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
+.logo{display:flex;align-items:center;gap:12px;font-weight:800;font-size:1.2rem;color:var(--text)}
+.mark{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:22px;background:linear-gradient(145deg,#F6CF7A,#B8802A);box-shadow:0 8px 24px -8px rgba(232,176,75,.8)}
+.links{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;border-radius:12px;font-weight:700;border:1px solid #2A3245;background:#141A27;color:var(--text);cursor:pointer;font:inherit;font-weight:700}
+.btn.gold{background:linear-gradient(135deg,#F2C66B,#C98E2E);color:#0A0D14;border:0;box-shadow:0 10px 30px -12px rgba(232,176,75,.8)}
+.btn.ghost{background:transparent}
+.btn.full{width:100%}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px}
+.grid{display:grid;gap:14px}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:820px){.g3,.g4,.g2{grid-template-columns:1fr}}
+h1{font-size:2.6rem;line-height:1.15;margin:.3em 0}
+h2{font-size:1.45rem;margin:0 0 14px}
+.muted{color:var(--muted)}
+label{display:block;font-size:.9rem;color:var(--muted);margin:12px 0 6px}
+input,select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #2A3245;background:#0F141F;color:var(--text);font:inherit}
+input:focus,select:focus{outline:2px solid rgba(232,176,75,.5);border-color:transparent}
+.check{display:flex;gap:10px;align-items:flex-start;margin:14px 0;font-size:.92rem}.check input{width:auto;margin-top:4px}
+.alert{padding:13px 16px;border-radius:14px;margin:12px 0;border:1px solid}
+.alert.err{background:rgba(255,93,108,.1);border-color:rgba(255,93,108,.4)}
+.alert.ok{background:rgba(43,217,139,.1);border-color:rgba(43,217,139,.4)}
+.risk{font-size:.85rem;color:var(--muted);border:1px dashed #2A3245;border-radius:16px;padding:16px;margin:26px 0}
+.price{font-size:2.2rem;font-weight:800}.price small{font-size:1rem;color:var(--muted);font-weight:500}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;font-size:.88rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.dot{width:9px;height:9px;border-radius:50%}.d-ok{background:var(--green)}.d-warn{background:var(--gold)}.d-bad{background:var(--red)}
+.kpi .l{color:var(--muted);font-size:.85rem}.kpi .v{font-size:1.5rem;font-weight:800;direction:ltr;text-align:start}
+.pos{color:var(--green)}.neg{color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:start}th{color:var(--muted);font-weight:500}
+td.num{direction:ltr;text-align:left}
+[dir=rtl] td.num,[dir=rtl] .kpi .v,[dir=rtl] .num{text-align:right}
+footer{padding:30px 0;color:var(--muted);font-size:.85rem;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <a class="logo" href="/"><span class="mark">🦅</span>{{ t.brand }}</a>
+  <div class="links">
+    <a class="btn ghost" href="/lang/{{ t.other }}">{{ t.other_label }}</a>
+    {% if sess.uid %}<a class="btn ghost" href="/logout">{{ t.logout }}</a>
+    {% else %}<a class="btn ghost" href="/login">{{ t.login }}</a>{% endif %}
+  </div>
+</nav>
+{% block body %}{% endblock %}
+<footer>© {{ t.brand }}{% if support %} · {{ t.support }}: {{ support }}{% endif %}</footer>
+</div>
+</body>
+</html>
